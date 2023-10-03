@@ -152,12 +152,6 @@ namespace osu.Game.Overlays.Mods
             switch (convertedBeatmap ? BeatmapInfo.Value.Ruleset.ShortName : game.Ruleset.Value.ShortName)
             {
                 case "taiko":
-                    if (circleSizeDisplay.Label != "CS")
-                    {
-                        RightContent.Remove(circleSizeDisplay, true);
-                        RightContent.Insert(-1000, circleSizeDisplay = new VerticalAttributeDisplay("CS") { Shear = new Vector2(-shear, 0) });
-                    }
-
                     RightContent.Where(d => d.Name != "circleSizeDisplay" && d.Name != "approachRateDisplay").ForEach(d => d.Show());
 
                     circleSizeDisplay.Hide();
