@@ -39,6 +39,9 @@ namespace osu.Game.Overlays.Mods
         protected override string PopInSampleName => "";
         protected override string PopOutSampleName => @"SongSelect/mod-select-overlay-pop-out";
 
+        private bool screenIsntWideEnough = false;
+        private double expandedAttributeMultiplierFillFlow;
+
         [Cached]
         public Bindable<IReadOnlyList<Mod>> SelectedMods { get; private set; } = new Bindable<IReadOnlyList<Mod>>(Array.Empty<Mod>());
 
@@ -353,12 +356,19 @@ namespace osu.Game.Overlays.Mods
             if (beatmapAttributesDisplay != null)
             {
                 float rightEdgeOfLastButton = footerButtonFlow.Last().ScreenSpaceDrawQuad.TopRight.X;
+                float leftEdgeOfAttributeDisplay = footerButtonFlow.ToScreenSpace(footerButtonFlow.DrawSize - new Vector2((float)expandedAttributeMultiplierFillFlow, 0)).X;
 
-                // this is cheating a bit; the 640 value is hardcoded based on how wide the expanded panel _generally_ is.
-                // due to the transition applied, the raw screenspace quad of the panel cannot be used, as it will trigger an ugly feedback cycle of expanding and collapsing.
-                float projectedLeftEdgeOfExpandedBeatmapAttributesDisplay = footerButtonFlow.ToScreenSpace(footerButtonFlow.DrawSize - new Vector2(640, 0)).X;
-
-                bool screenIsntWideEnough = rightEdgeOfLastButton > projectedLeftEdgeOfExpandedBeatmapAttributesDisplay;
+                // i tried. biggest caveat is that when the attribute display is changed (by changing rulesets) *while collapsed*, its width will not be up to date which might
+                // cause it to expand too early or too late. works reasonably well otherwise.
+                if (rightEdgeOfLastButton > beatmapAttributesDisplay.ScreenSpaceDrawQuad.BottomLeft.X)
+                {
+                    expandedAttributeMultiplierFillFlow = beatmapAttributesDisplay.Parent.BoundingBox.Width;
+                    screenIsntWideEnough = true;
+                }
+                else if (rightEdgeOfLastButton < leftEdgeOfAttributeDisplay)
+                {
+                    screenIsntWideEnough = false;
+                }
 
                 // only update preview panel's collapsed state after we are fully visible, to ensure all the buttons are where we expect them to be.
                 if (Alpha == 1)
