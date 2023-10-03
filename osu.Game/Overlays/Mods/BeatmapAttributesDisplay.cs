@@ -16,6 +16,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Rulesets.Mods;
 using osuTK;
 using System.Threading;
+using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Input.Events;
 using osu.Game.Configuration;
 
@@ -47,16 +48,19 @@ namespace osu.Game.Overlays.Mods
         [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
 
+        [Resolved]
+        private OsuGameBase game { get; set; } = null!;
+
         private CancellationTokenSource? cancellationSource;
         private IBindable<StarDifficulty?> starDifficulty = null!;
 
         private const float transition_duration = 250;
 
+        private const float shear = ShearedOverlayContainer.SHEAR;
+
         [BackgroundDependencyLoader]
         private void load()
         {
-            const float shear = ShearedOverlayContainer.SHEAR;
-
             LeftContent.AddRange(new Drawable[]
             {
                 starRatingDisplay = new StarRatingDisplay(default, animated: true)
@@ -142,6 +146,46 @@ namespace osu.Game.Overlays.Mods
         {
             if (BeatmapInfo.Value == null)
                 return;
+
+            bool convertedBeatmap = !(BeatmapInfo.Value.Ruleset.ShortName == "osu" || BeatmapInfo.Value.Ruleset.Equals(game.Ruleset.Value));
+
+            switch (convertedBeatmap ? BeatmapInfo.Value.Ruleset.ShortName : game.Ruleset.Value.ShortName)
+            {
+                case "taiko":
+                    if (circleSizeDisplay.Label != "CS")
+                    {
+                        RightContent.Remove(circleSizeDisplay, true);
+                        RightContent.Insert(-1000, circleSizeDisplay = new VerticalAttributeDisplay("CS") { Shear = new Vector2(-shear, 0) });
+                    }
+
+                    RightContent.Where(d => d.Name != "circleSizeDisplay" && d.Name != "approachRateDisplay").ForEach(d => d.Show());
+
+                    circleSizeDisplay.Hide();
+                    approachRateDisplay.Hide();
+                    break;
+
+                case "mania":
+                    if (circleSizeDisplay.Label != "Keys")
+                    {
+                        RightContent.Remove(circleSizeDisplay, true);
+                        RightContent.Insert(-1000, circleSizeDisplay = new VerticalAttributeDisplay("Keys", 0) { Shear = new Vector2(-shear, 0) });
+                    }
+
+                    RightContent.Where(d => d.Name != "approachRateDisplay").ForEach(d => d.Show());
+
+                    approachRateDisplay.Hide();
+                    break;
+
+                default:
+                    if (circleSizeDisplay.Label != "CS")
+                    {
+                        RightContent.Remove(circleSizeDisplay, true);
+                        RightContent.Insert(-1000, circleSizeDisplay = new VerticalAttributeDisplay("CS") { Shear = new Vector2(-shear, 0) });
+                    }
+
+                    RightContent.ForEach(d => d.Show());
+                    break;
+            }
 
             cancellationSource?.Cancel();
 

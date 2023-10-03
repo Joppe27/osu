@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics;
@@ -28,7 +29,7 @@ namespace osu.Game.Overlays.Mods
         /// </summary>
         public LocalisableString Label { get; protected set; }
 
-        public VerticalAttributeDisplay(LocalisableString label)
+        public VerticalAttributeDisplay(LocalisableString label, int attributeDecimals = 1)
         {
             Label = label;
 
@@ -58,6 +59,7 @@ namespace osu.Game.Overlays.Mods
                         Origin = Anchor.Centre,
                         Anchor = Anchor.Centre,
                         Current = { BindTarget = Current },
+                        DecimalCount = attributeDecimals,
                     }
                 }
             };
@@ -65,9 +67,11 @@ namespace osu.Game.Overlays.Mods
 
         private partial class EffectCounter : RollingCounter<double>
         {
+            public int DecimalCount { private get; set; }
+
             protected override double RollingDuration => 500;
 
-            protected override LocalisableString FormatCount(double count) => count.ToLocalisableString("0.0");
+            protected override LocalisableString FormatCount(double count) => count.ToLocalisableString(DecimalCount == 0 ? "0" : $"0.{new string('0', DecimalCount)}");
 
             protected override OsuSpriteText CreateSpriteText() => new OsuSpriteText
             {
